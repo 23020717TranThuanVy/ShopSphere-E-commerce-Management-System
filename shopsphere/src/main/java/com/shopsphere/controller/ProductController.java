@@ -1,9 +1,13 @@
 package com.shopsphere.controller;
 
-import jakarta.validation.Valid;
-import com.shopsphere.entity.Product;
+import com.shopsphere.dto.ProductRequest;
+import com.shopsphere.dto.ProductResponse;
 import com.shopsphere.service.ProductService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -17,18 +21,19 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> getAllProducts() {
+    public List<ProductResponse> getAllProducts() {
         return productService.getAllProducts();
     }
 
     @GetMapping("/{id}")
-    public Product getProductById(@PathVariable Long id) {
+    public ProductResponse getProductById(@PathVariable Long id) {
         return productService.getProductById(id);
     }
 
     @PostMapping
-    public Product createProduct(@Valid @RequestBody Product product) {
-        return productService.createProduct(product);
+    public ProductResponse createProduct(
+            @Valid @RequestBody ProductRequest request) {
+        return productService.createProduct(request);
     }
 
     @DeleteMapping("/{id}")
@@ -37,11 +42,9 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public Product updateProduct(
-        @PathVariable Long id,
-        @Valid @RequestBody Product product) {
-    return productService.updateProduct(id, product);
+    public ProductResponse updateProduct(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductRequest request) {
+        return productService.updateProduct(id, request);
     }
-
-
 }
