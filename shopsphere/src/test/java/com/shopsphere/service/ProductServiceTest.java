@@ -222,6 +222,7 @@ class ProductServiceTest {
     void deleteProduct_shouldCallRepositoryDeleteById() {
         // Arrange
         Long productId = 1L;
+        when(productRepository.existsById(productId)).thenReturn(true);
 
         // Act
         productService.deleteProduct(productId);

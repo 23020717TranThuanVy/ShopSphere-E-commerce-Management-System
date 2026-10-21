@@ -42,7 +42,9 @@ class ProductControllerTest {
                 "Laptop",
                 new BigDecimal("15000000"),
                 "Gaming laptop",
-                10
+                10,
+                1L,
+                "Electronics"
         );
 
         when(productService.getAllProducts())
@@ -66,7 +68,9 @@ class ProductControllerTest {
                 "Laptop",
                 new BigDecimal("15000000"),
                 "Gaming laptop",
-                10
+                10,
+                1L,
+                "Electronics"
         );
 
         when(productService.getProductById(1L))
@@ -90,7 +94,9 @@ class ProductControllerTest {
                 "Keyboard",
                 new BigDecimal("1200000"),
                 "Mechanical keyboard",
-                20
+                20,
+                1L,
+                "Accessories"
         );
 
         when(productService.createProduct(any(
@@ -102,7 +108,8 @@ class ProductControllerTest {
                     "name": "Keyboard",
                     "price": 1200000,
                     "description": "Mechanical keyboard",
-                    "stock": 20
+                    "stock": 20,
+                    "categoryId": 1
                 }
                 """;
 
@@ -125,6 +132,7 @@ class ProductControllerTest {
                         && request.getDescription()
                                 .equals("Mechanical keyboard")
                         && request.getStock().equals(20)
+                        && request.getCategoryId().equals(1L)
         ));
     }
     
@@ -157,7 +165,9 @@ class ProductControllerTest {
                 "Updated Laptop",
                 new BigDecimal("18000000"),
                 "Updated gaming laptop",
-                15
+                15,
+                1L,
+                "Electronics"
         );
 
         when(productService.updateProduct(
@@ -172,7 +182,8 @@ class ProductControllerTest {
                         "name": "Updated Laptop",
                         "price": 18000000,
                         "description": "Updated gaming laptop",
-                        "stock": 15
+                        "stock": 15,
+                        "categoryId": 1
                 }
                 """;
 
@@ -211,7 +222,7 @@ class ProductControllerTest {
         }
 
         @Test
-        void deleteProduct_shouldReturnOk() throws Exception {
+        void deleteProduct_shouldReturnNoContent() throws Exception {
         // Arrange
         Long productId = 1L;
 
@@ -220,7 +231,7 @@ class ProductControllerTest {
                 org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .delete("/api/products/{id}", productId)
         )
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         // Xác nhận Controller gọi Service với đúng ID
         verify(productService).deleteProduct(productId);

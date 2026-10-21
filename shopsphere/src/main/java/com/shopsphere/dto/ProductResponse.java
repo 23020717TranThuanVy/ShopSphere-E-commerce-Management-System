@@ -9,6 +9,8 @@ public class ProductResponse {
     private BigDecimal price;
     private String description;
     private Integer stock;
+    private Long categoryId;
+    private String categoryName;
 
     public ProductResponse() {
     }
@@ -18,13 +20,17 @@ public class ProductResponse {
             String name,
             BigDecimal price,
             String description,
-            Integer stock
+            Integer stock,
+            Long categoryId,
+            String categoryName
     ) {
         this.id = id;
         this.name = name;
         this.price = price;
         this.description = description;
         this.stock = stock;
+        this.categoryId = categoryId;
+        this.categoryName = categoryName;
     }
 
     public Long getId() {
@@ -45,5 +51,13 @@ public class ProductResponse {
 
     public Integer getStock() {
         return stock;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
     }
 }

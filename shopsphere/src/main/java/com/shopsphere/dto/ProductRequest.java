@@ -4,6 +4,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
@@ -21,6 +22,10 @@ public class ProductRequest {
     @NotNull(message = "Product stock is required")
     @PositiveOrZero(message = "Product stock must not be negative")
     private Integer stock;
+
+    @NotNull(message = "Category ID is required")
+    @Positive(message = "Category ID must be greater than 0")
+    private Long categoryId;
 
     public ProductRequest() {
     }
@@ -55,5 +60,13 @@ public class ProductRequest {
 
     public void setStock(Integer stock) {
         this.stock = stock;
+    }
+
+    public Long getCategoryId() {
+    return categoryId;
+}
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 }
