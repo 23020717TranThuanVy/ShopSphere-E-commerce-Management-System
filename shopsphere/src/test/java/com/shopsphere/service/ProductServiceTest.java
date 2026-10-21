@@ -1,7 +1,9 @@
 package com.shopsphere.service;
 
 import com.shopsphere.dto.ProductResponse;
+import com.shopsphere.entity.Category;
 import com.shopsphere.entity.Product;
+import com.shopsphere.repository.CategoryRepository;
 import com.shopsphere.repository.ProductRepository;
 import com.shopsphere.exception.ResourceNotFoundException;
 import com.shopsphere.dto.ProductRequest;
@@ -27,6 +29,9 @@ class ProductServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private CategoryRepository categoryRepository;
 
     @InjectMocks
     private ProductService productService;
@@ -123,6 +128,10 @@ class ProductServiceTest {
         request.setPrice(new BigDecimal("1200000"));
         request.setDescription("Mechanical keyboard");
         request.setStock(20);
+        request.setCategoryId(1L);
+
+        Category category = new Category("Accessories", "Computer accessories");
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
 
         Product savedProduct = new Product(
                 "Keyboard",
@@ -166,6 +175,10 @@ class ProductServiceTest {
         request.setPrice(new BigDecimal("1200000"));
         request.setDescription("New description");
         request.setStock(20);
+        request.setCategoryId(1L);
+
+        Category category = new Category("Accessories", "Computer accessories");
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
 
         when(productRepository.findById(productId))
                 .thenReturn(Optional.of(existingProduct));
