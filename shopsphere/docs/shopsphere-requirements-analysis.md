@@ -1,45 +1,49 @@
 # ShopSphere — Phân tích phạm vi hiện tại
 
-> Tài liệu này mô tả phiên bản đang có trong repository, không phải đặc tả marketplace tương lai. Cập nhật lần cuối: 2026-10-23.
+> Mô tả phiên bản đang có trong repository, không phải đặc tả marketplace tương lai. Cập nhật: 2026-10-23.
 
 ## Mục tiêu
 
-ShopSphere hiện là ứng dụng quản lý danh mục sản phẩm và tồn kho cơ bản. Nhân viên có thể tạo và tổ chức danh mục, quản lý sản phẩm, giá và số lượng tồn qua giao diện web hoặc REST API.
+ShopSphere là ứng dụng web quản lý danh mục sản phẩm và tồn kho cơ bản. Người dùng xem catalog; Admin quản lý sản phẩm/danh mục.
 
-## Công nghệ đang dùng
+## Công nghệ
 
-- Backend: Java 17, Spring Boot 4.1.1, Spring MVC, Spring Data JPA, Jakarta Validation.
+- Backend: Java 17, Spring Boot 4.1.1, Spring MVC, Spring Data JPA, Spring Security, Jakarta Validation.
 - Database: Microsoft SQL Server; Hibernate `ddl-auto=update` cập nhật schema khi ứng dụng khởi động.
 - Frontend: React 19, TypeScript 6, Vite 8.
-- Local services: Docker Compose chạy API và SQL Server Express. Host API port là `8081`; chạy Maven trực tiếp mặc định dùng `8080`.
+- Local deployment: Docker Compose chạy API và SQL Server Express. Host API port `8081`; chạy Maven trực tiếp mặc định dùng `8080`.
 - API docs: springdoc OpenAPI / Swagger UI.
 
 ## Chức năng đã triển khai
 
-### Danh mục
+### Tài khoản và phân quyền
 
-- Liệt kê, xem theo ID, tạo, cập nhật và xóa danh mục.
-- Tên danh mục bắt buộc không rỗng; mô tả là tùy chọn.
+- Đăng ký công khai tạo tài khoản `CUSTOMER`; đăng nhập và đăng xuất bằng HTTP session phía server.
+- Trình duyệt giữ session cookie HttpOnly, SameSite=Lax. Password hash bằng BCrypt.
+- Request thay đổi dữ liệu cần CSRF token.
+- Admin ban đầu được bootstrap bằng `SHOPSPHERE_ADMIN_EMAIL` và `SHOPSPHERE_ADMIN_PASSWORD`.
+- GET danh mục/sản phẩm public; thao tác ghi yêu cầu role `ADMIN`.
+- Các role `SELLER` và `SHIPPER` đã có trong enum nhưng chưa có luồng tạo/cấp quyền.
 
-### Sản phẩm
+### Danh mục và sản phẩm
 
-- Liệt kê, xem theo ID, tạo, cập nhật và xóa sản phẩm.
-- Mỗi sản phẩm có tên, giá, mô tả, số lượng tồn và tham chiếu đến một danh mục.
-- Khi tạo hoặc cập nhật, danh mục phải tồn tại. Tên không rỗng, giá lớn hơn 0, tồn kho không âm.
+- Danh mục: xem danh sách/chi tiết, tạo, cập nhật, xóa.
+- Sản phẩm: xem danh sách/chi tiết, tạo, cập nhật, xóa.
+- Sản phẩm có tên, giá, mô tả, số lượng tồn và một danh mục.
+- Tên không rỗng, giá lớn hơn 0, tồn kho không âm; danh mục phải tồn tại khi ghi sản phẩm.
 
-### Giao diện web
+### Giao diện
 
-- Xem, tìm kiếm và lọc sản phẩm theo danh mục.
-- Xem tổng số sản phẩm, số lượng tồn, giá trị tồn kho và số sản phẩm có tồn kho dưới 10.
-- Tạo, sửa, xóa sản phẩm; tạo và xóa danh mục.
-- Giao diện không có đăng nhập; API hiện cũng chưa cấu hình xác thực/phân quyền.
+- Đăng nhập/đăng ký Customer, xem/tìm/lọc sản phẩm và xem summary tồn kho.
+- Admin tạo/sửa/xóa sản phẩm, tạo/xóa danh mục.
+- Backend hỗ trợ cập nhật danh mục nhưng giao diện hiện chưa có nút sửa danh mục.
 
-## Ngoài phạm vi phiên bản hiện tại
+## Chưa triển khai
 
-Repository chưa triển khai tài khoản/role, seller/store, giỏ hàng, checkout, đơn hàng, thanh toán, giao vận, khuyến mãi hay quản trị marketplace. Các luồng này không nên được hiểu là tính năng dùng được chỉ vì từng xuất hiện trong bản tài liệu cũ.
+Chưa có store/chủ sở hữu sản phẩm, duyệt Seller, quản lý Shipper, cart, checkout, order, payment, shipping, khuyến mãi hoặc quản trị marketplace. Customer có thể đọc catalog nhưng không được thay đổi dữ liệu.
 
-## Yêu cầu khi phát triển tiếp
+## Yêu cầu phát triển tiếp
 
-- Giữ API và giao diện đồng bộ khi thay đổi DTO hoặc endpoint.
-- Không commit `.env`, `.env.docker`, `node_modules`, `dist` hoặc dữ liệu cục bộ.
-- Nếu bổ sung xác thực hoặc nghiệp vụ marketplace, cần cập nhật tài liệu thiết kế, schema, API và test cùng thay đổi mã nguồn.
+- Khi thêm role, kiểm tra quyền tại backend; không dựa riêng vào việc ẩn nút trên UI.
+- Trước khi cho Seller quản lý sản phẩm, cần bổ sung store và kiểm tra ownership ở mọi thao tác.
+- Không commit `.env`, `.env.docker`, `node_modules`, `dist`, log hoặc dữ liệu cục bộ.

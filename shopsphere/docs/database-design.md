@@ -1,18 +1,26 @@
 # ShopSphere — Thiết kế cơ sở dữ liệu hiện tại
 
-> Tài liệu phản ánh hai entity đã triển khai. Các bảng marketplace từng đề xuất trước đây chưa có trong ứng dụng. Cập nhật: 2026-10-23.
+> Mô tả các entity đã triển khai. Cập nhật: 2026-10-23.
 
-## Hệ quản trị và quản lý schema
+## Hệ quản trị và schema
 
 - Microsoft SQL Server (Compose dùng SQL Server 2022 Express).
-- Spring Data JPA và Hibernate ánh xạ entity.
-- `spring.jpa.hibernate.ddl-auto=update`; Hibernate cập nhật schema khi ứng dụng khởi động.
-- Chưa có Flyway/Liquibase migration. Sao lưu dữ liệu trước khi thay đổi entity/schema.
+- Spring Data JPA/Hibernate; `spring.jpa.hibernate.ddl-auto=update`.
+- Chưa có Flyway/Liquibase migration; backup dữ liệu trước khi đổi entity.
 
-## ERD hiện tại
+## ERD
 
 ```mermaid
 erDiagram
+  ACCOUNT_USER {
+    BIGINT id PK
+    VARCHAR display_name
+    VARCHAR email UK
+    VARCHAR password_hash
+    VARCHAR role
+    BIT enabled
+    DATETIME created_at
+  }
   CATEGORY ||--o{ PRODUCT : categorizes
   CATEGORY {
     BIGINT id PK
@@ -29,44 +37,41 @@ erDiagram
   }
 ```
 
-Tên cột SQL cụ thể do quy ước naming của Hibernate tạo ra; entity chỉ khai báo tường minh `category_id` cho khóa ngoại. Kiểu và độ dài vật lý cần kiểm tra trên schema SQL Server thực tế nếu cần tài liệu mức migration.
+Kiểu SQL chính xác do Hibernate mapping quyết định; sơ đồ trên thể hiện logic, không thay thế schema thực tế.
 
-## Entity
+## `AccountUser` — bảng `app_users`
 
-### `Category`
-
-| Thuộc tính Java | Ý nghĩa |
+| Thuộc tính | Quy tắc |
 | --- | --- |
-| `id: Long` | Khóa chính, sinh tự động bằng `IDENTITY` |
-| `name: String` | Tên danh mục, không được để trống |
-| `description: String` | Mô tả tùy chọn |
+| `id: Long` | Khóa chính, `IDENTITY` |
+| `displayName: String` | Tên hiển thị, bắt buộc, tối đa 120 ký tự qua request |
+| `email: String` | Bắt buộc, duy nhất, dùng làm username |
+| `passwordHash: String` | BCrypt hash, không lưu password thô |
+| `role: AccountRole` | Enum lưu dạng chuỗi: CUSTOMER, SELLER, ADMIN, SHIPPER |
+| `enabled: boolean` | Tài khoản được phép đăng nhập hay không |
+| `createdAt: LocalDateTime` | Thời điểm khởi tạo |
 
-### `Product`
+Role lưu trong bảng user, chưa có bảng role riêng. Đăng ký công khai chỉ tạo Customer; Admin có thể được bootstrap qua environment. Chưa có luồng cấp Seller/Shipper.
 
-| Thuộc tính Java | Ý nghĩa |
-| --- | --- |
-| `id: Long` | Khóa chính, sinh tự động bằng `IDENTITY` |
-| `name: String` | Tên sản phẩm, không được để trống |
-| `price: BigDecimal` | Giá lớn hơn 0 |
-| `description: String` | Mô tả tùy chọn |
-| `stock: Integer` | Tồn kho từ 0 trở lên |
-| `category: Category` | Quan hệ `ManyToOne`, tải lazy, khóa ngoại `category_id` |
+## `Category`
 
-API yêu cầu `categoryId` dương và service xác nhận danh mục tồn tại khi tạo/cập nhật sản phẩm. Entity hiện không khai báo unique constraint cho tên danh mục/sản phẩm, cũng không khai báo `nullable=false` cho quan hệ category.
+- `id: Long`: khóa chính sinh tự động.
+- `name: String`: tên bắt buộc không rỗng.
+- `description: String`: tùy chọn.
 
-## Hành vi xóa
+## `Product`
 
-- Xóa sản phẩm theo ID; ID không tồn tại trả về 404.
-- Xóa danh mục tìm entity rồi gọi repository delete. Nếu còn sản phẩm tham chiếu, kết quả phụ thuộc ràng buộc khóa ngoại của database và có thể thất bại; UI hiện chặn thao tác khi sản phẩm vẫn thuộc danh mục đó.
-- Không cấu hình cascade delete.
+- `id: Long`: khóa chính sinh tự động.
+- `name: String`: tên bắt buộc không rỗng.
+- `price: BigDecimal`: bắt buộc, tối thiểu `0.01`.
+- `description: String`: tùy chọn.
+- `stock: Integer`: bắt buộc, từ 0 trở lên.
+- `category: Category`: quan hệ `ManyToOne`, lazy, khóa ngoại `category_id`.
 
-## Quy tắc validation
+API yêu cầu category ID dương và service xác nhận danh mục tồn tại khi tạo/sửa sản phẩm. Entity hiện không khai báo unique cho tên danh mục/sản phẩm và không bật cascade delete.
 
-- Tên sản phẩm/danh mục không được rỗng.
-- Giá là bắt buộc và tối thiểu `0.01`.
-- Tồn kho là bắt buộc và không âm.
-- `categoryId` của request sản phẩm là bắt buộc, dương và phải trỏ tới danh mục có thật.
+## Hành vi xóa và dữ liệu chưa có
 
-## Chưa có trong schema
-
-Không có bảng user/role/store/cart/order/payment/shipment, lịch sử tồn kho hay audit log. Các cấu trúc này chỉ được thiết kế khi tính năng tương ứng được triển khai và chốt quy tắc nghiệp vụ.
+- Xóa product không tồn tại trả 404.
+- Xóa danh mục đang được tham chiếu có thể bị SQL Server từ chối do khóa ngoại; API chưa ánh xạ thành lỗi nghiệp vụ riêng. UI chặn thao tác nếu còn sản phẩm.
+- Chưa có bảng store/cart/order/payment/shipment, lịch sử tồn kho hoặc audit log.

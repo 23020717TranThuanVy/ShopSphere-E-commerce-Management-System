@@ -2,10 +2,12 @@
 
 React + TypeScript + Vite interface for the ShopSphere product and category APIs.
 
+The app starts with a sign-in screen. Public registration creates a Customer account; Customers can browse the catalog, while product/category changes are limited to the bootstrapped Admin account. The browser uses the backend's HttpOnly session cookie and fetches a CSRF token for state-changing requests.
+
 ## Run locally
 
 1. Start the backend and SQL Server from `shopsphere/` with Docker Compose. The API uses host port `8081` so it can run alongside the GDRN backend on port `8080`.
-2. In this directory, install dependencies and start Vite:
+2. From `shopsphere/frontend/`, install dependencies and start Vite:
 
    ```powershell
    npm install

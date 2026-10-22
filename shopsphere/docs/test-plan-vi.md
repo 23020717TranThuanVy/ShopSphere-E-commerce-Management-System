@@ -1,42 +1,43 @@
-# ShopSphere — Kế hoạch kiểm thử phạm vi hiện tại
+# ShopSphere — Kế hoạch kiểm thử hiện tại
 
-> Kế hoạch này giới hạn ở chức năng có trong repository. Không bao gồm kiểm thử checkout, bảo mật JWT hoặc giao vận vì các tính năng đó chưa tồn tại. Cập nhật: 2026-10-23.
+> Phạm vi: auth session, quyền truy cập và CRUD catalog đã có trong repository. Cập nhật: 2026-10-23.
 
-## Công nghệ và test hiện có
+## Công nghệ kiểm thử
 
-- Backend dùng JUnit 5, Spring Boot Test/MockMvc và Mockito từ dependency test của Spring Boot.
-- Frontend hiện chưa khai báo test runner hoặc script test trong `frontend/package.json`.
-- Test context ứng dụng có thể cần SQL Server theo cấu hình runtime; các unit/controller tests mock service/repository.
+- Backend: JUnit 5, Spring Boot Test/MockMvc, Mockito.
+- Frontend: chưa khai báo test runner; `npm run build` kiểm tra TypeScript và build Vite.
+- `ShopsphereApplicationTests` khởi động Spring context và cần SQL Server theo cấu hình runtime.
 
-## Phạm vi cần kiểm thử
+## Authentication/session — kiểm tra cần có
 
-### Category API/service
+- CSRF endpoint tạo token; POST không có token bị từ chối.
+- Đăng ký hợp lệ tạo CUSTOMER, hash password, cấp session cookie; request không thể chọn role khác.
+- Email/password không hợp lệ bị validate; email trùng trả 409.
+- Đăng nhập đúng trả tài khoản/session; sai credentials trả 401.
+- `/api/auth/me` trả 401 khi anonymous và tài khoản khi đã đăng nhập.
+- Logout yêu cầu CSRF, hủy session; session cũ không còn truy cập nội dung cần đăng nhập.
+- Password lưu trong DB là BCrypt hash, không phải giá trị thô.
 
-- Liệt kê, đọc theo ID, tạo, cập nhật, xóa danh mục.
-- Không tìm thấy ID trả về 404.
-- Tên rỗng trả validation 400.
-- Xóa danh mục đang được sản phẩm tham chiếu: xác nhận hành vi trên SQL Server và response lỗi; hiện chưa có ánh xạ lỗi rõ ràng.
+## Authorization/catalog — kiểm tra cần có
 
-### Product API/service
+- GET products/categories hoạt động khi chưa đăng nhập.
+- Customer đăng nhập vẫn chỉ đọc catalog; POST/PUT/DELETE catalog trả 403.
+- Admin được phép tạo/sửa/xóa catalog.
+- Admin bootstrap tạo tài khoản khi chưa có; restart không tạo bản trùng và không ghi password vào log.
+- Validation product/category và 404 cho ID không tồn tại.
+- Tạo/sửa product cần category ID hợp lệ; response có categoryId/categoryName.
+- Xóa product thành công trả 204; xóa category còn product được kiểm tra hành vi khóa ngoại.
 
-- Liệt kê, đọc theo ID, tạo, cập nhật, xóa sản phẩm.
-- Tạo/sửa yêu cầu category ID hợp lệ; category không tồn tại trả 404.
-- Không tìm thấy product ID trả 404.
-- Tên rỗng, giá thiếu/không dương, tồn kho âm/thiếu, categoryId thiếu/không dương trả 400.
-- Response bao gồm dữ liệu sản phẩm cùng `categoryId` và `categoryName`.
-- Xóa thành công trả 204.
+## Frontend smoke test thủ công
 
-### Frontend smoke test thủ công
+1. Khởi động API/SQL Server và Vite; trang đăng nhập hiển thị.
+2. Đăng ký Customer, tải dashboard và kiểm tra chế độ chỉ đọc.
+3. Đăng xuất/đăng nhập lại; kiểm tra session còn hiệu lực khi refresh trang.
+4. Đăng nhập bằng Admin bootstrap; tạo danh mục/sản phẩm, sửa sản phẩm, tìm/lọc, xóa sản phẩm.
+5. Kiểm tra CSRF header được gửi cho thao tác ghi, lỗi API hiển thị rõ và dashboard cập nhật summary.
+6. Chạy `npm run build` trong `shopsphere/frontend/`.
 
-1. Khởi động API/SQL Server và frontend.
-2. Mở trang Products, xác nhận tải được danh mục và sản phẩm; lỗi API hiển thị thông báo.
-3. Tạo danh mục, tạo sản phẩm thuộc danh mục đó, sửa sản phẩm, tìm kiếm/lọc và xóa sản phẩm.
-4. Xác nhận giao diện cập nhật các summary sau thao tác và xóa danh mục bị chặn khi còn sản phẩm liên kết.
-5. Chạy `npm run build` để kiểm tra TypeScript và tạo bản build Vite.
-
-## Test tự động đã có trong repository
-
-Các lớp test hiện tại:
+## Automated tests hiện có
 
 - `ProductControllerTest`
 - `CategoryControllerTest`
@@ -45,15 +46,8 @@ Các lớp test hiện tại:
 - `GlobalExceptionHandlerTest`
 - `ShopsphereApplicationTests`
 
-Tên lớp không đảm bảo toàn bộ hành vi trong kế hoạch đã được kiểm thử. Hãy chạy `.\mvnw.cmd test` trong `shopsphere/` để xác nhận kết quả hiện tại; xem báo cáo trong `target/surefire-reports` nếu thất bại.
+Các lớp auth/security test chưa được bổ sung. Hãy chạy `.\mvnw.cmd test` trong `shopsphere/` để kiểm tra bộ hiện có; xem `target/surefire-reports` khi thất bại.
 
 ## Ngoài phạm vi
 
-Chưa có test auth/role, store ownership, cart/checkout, transaction đơn hàng, payment/webhook, shipping, refund, hiệu năng hay concurrency tồn kho. Bổ sung các nhóm này cùng với việc triển khai chức năng tương ứng.
-
-## Điều kiện hoàn thành thay đổi
-
-- Bổ sung hoặc cập nhật test cho endpoint/service bị ảnh hưởng.
-- Kiểm tra status code, response body, validation và trường hợp tài nguyên không tồn tại.
-- Chạy bộ test backend liên quan; chạy `npm run build` khi thay đổi frontend.
-- Không đưa file `.env*`, `node_modules`, `dist`, log hay dữ liệu database vào commit.
+Chưa kiểm thử Seller/store ownership, Shipper, cart/checkout/order, payment/webhook, shipping/refund, hiệu năng hay concurrency tồn kho vì các tính năng đó chưa tồn tại.

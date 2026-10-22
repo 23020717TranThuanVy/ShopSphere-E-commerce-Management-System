@@ -1,38 +1,49 @@
 # ShopSphere — Đặc tả REST API hiện tại
 
-> Chỉ liệt kê endpoint được ánh xạ trong các controller hiện tại. API chưa có prefix `/api/v1` và chưa yêu cầu xác thực. Cập nhật: 2026-10-23.
+> Chỉ liệt kê endpoint đã triển khai. API chưa có prefix `/api/v1`. Cập nhật: 2026-10-23.
 
 ## Thông tin chung
 
-- Base URL Docker: `http://localhost:8081`.
-- Base URL khi chạy Spring Boot trực tiếp: `http://localhost:8080`.
-- Base path: `/api`.
-- Request/response dùng JSON (`Content-Type: application/json`).
-- Swagger UI: `/swagger-ui/index.html`; OpenAPI JSON: `/v3/api-docs`.
+- Docker API: `http://localhost:8081`; chạy backend trực tiếp: `http://localhost:8080`.
+- Request/response dùng JSON; Swagger UI: `/swagger-ui/index.html`; OpenAPI JSON: `/v3/api-docs`.
+- Đăng nhập dùng HTTP session. Trình duyệt giữ cookie HttpOnly; không trả JWT.
+- Request `POST`, `PUT`, `DELETE` cần CSRF token. Gọi `GET /api/auth/csrf`, đọc `token` và `headerName`, rồi gửi token trong header tương ứng.
 
-## Danh mục
+## Authentication
 
 | Method | Endpoint | Body | Thành công |
 | --- | --- | --- | --- |
-| `GET` | `/api/categories` | — | `200`, mảng danh mục |
-| `GET` | `/api/categories/{id}` | — | `200`, danh mục |
-| `POST` | `/api/categories` | `{ "name": "Electronics", "description": "Devices" }` | `201`, danh mục mới |
-| `PUT` | `/api/categories/{id}` | `{ "name": "Electronics", "description": "Devices" }` | `200`, danh mục cập nhật |
-| `DELETE` | `/api/categories/{id}` | — | `204` |
+| `GET` | `/api/auth/csrf` | — | `200`, CSRF token gồm `token`, `headerName`, `parameterName` |
+| `POST` | `/api/auth/register` | `{ "displayName": "Vy", "email": "vy@example.com", "password": "..." }` | `200`, tạo Customer và đăng nhập |
+| `POST` | `/api/auth/login` | `{ "email": "vy@example.com", "password": "..." }` | `200`, tạo session |
+| `GET` | `/api/auth/me` | — | `200`, tài khoản hiện tại; `401` nếu chưa đăng nhập |
+| `POST` | `/api/auth/logout` | — | `204`, hủy session |
+
+Response tài khoản gồm `id`, `displayName`, `email`, `role`. Đăng ký công khai luôn cấp role `CUSTOMER`; role không nhận từ request. Mật khẩu tối thiểu 8 ký tự, tối đa 72 ký tự; email phải hợp lệ. Email đã đăng ký trả `409 Conflict`; thông tin đăng nhập không hợp lệ trả `401`.
+
+## Danh mục
+
+| Method | Endpoint | Body | Thành công/Quyền |
+| --- | --- | --- | --- |
+| `GET` | `/api/categories` | — | `200`, public |
+| `GET` | `/api/categories/{id}` | — | `200`, public |
+| `POST` | `/api/categories` | `{ "name": "Electronics", "description": "Devices" }` | `201`, ADMIN |
+| `PUT` | `/api/categories/{id}` | CategoryRequest | `200`, ADMIN |
+| `DELETE` | `/api/categories/{id}` | — | `204`, ADMIN |
 
 Response danh mục có `id`, `name`, `description`.
 
 ## Sản phẩm
 
-| Method | Endpoint | Body | Thành công |
+| Method | Endpoint | Body | Thành công/Quyền |
 | --- | --- | --- | --- |
-| `GET` | `/api/products` | — | `200`, mảng sản phẩm |
-| `GET` | `/api/products/{id}` | — | `200`, sản phẩm |
-| `POST` | `/api/products` | ProductRequest | `200`, sản phẩm mới |
-| `PUT` | `/api/products/{id}` | ProductRequest | `200`, sản phẩm cập nhật |
-| `DELETE` | `/api/products/{id}` | — | `204` |
+| `GET` | `/api/products` | — | `200`, public |
+| `GET` | `/api/products/{id}` | — | `200`, public |
+| `POST` | `/api/products` | ProductRequest | `200`, ADMIN |
+| `PUT` | `/api/products/{id}` | ProductRequest | `200`, ADMIN |
+| `DELETE` | `/api/products/{id}` | — | `204`, ADMIN |
 
-Ví dụ request tạo/cập nhật:
+Ví dụ ProductRequest:
 
 ```json
 {
@@ -48,15 +59,13 @@ Response sản phẩm có `id`, `name`, `price`, `description`, `stock`, `catego
 
 ## Validation và lỗi
 
-- `name`: bắt buộc, không chỉ gồm khoảng trắng.
-- `price`: bắt buộc, tối thiểu `0.01`.
-- `stock`: bắt buộc, từ `0` trở lên.
-- `categoryId`: bắt buộc, số dương và phải là ID danh mục tồn tại.
-- `400 Bad Request`: body sai validation; JSON có `timestamp`, `status`, `error`, `message` và map `fieldErrors`.
-- `404 Not Found`: không tìm thấy sản phẩm/danh mục; body `ErrorResponse` có `timestamp`, `status`, `error`, `message`, `path`.
-- `204 No Content`: xóa thành công.
-- Lỗi ràng buộc khi xóa danh mục đang được sản phẩm sử dụng chưa được chuẩn hóa thành response nghiệp vụ riêng.
+- Product: tên không rỗng; giá bắt buộc và ít nhất `0.01`; stock bắt buộc, không âm; categoryId bắt buộc, dương và phải tồn tại.
+- Category: tên không rỗng.
+- Validation lỗi trả `400` với `fieldErrors`.
+- Chưa tìm thấy product/category trả `404` với `ErrorResponse` gồm timestamp, status, error, message, path.
+- Chưa đăng nhập trả `401`; thiếu quyền ADMIN trả `403`.
+- Xóa danh mục đang được sản phẩm tham chiếu chưa có lỗi nghiệp vụ chuẩn hóa.
 
-## API chưa triển khai
+## Chưa triển khai
 
-Không có endpoint auth/users, stores/sellers, cart, checkout, orders, payments, shipments hay admin. Các endpoint `/api/v1/...` được đề cập trong tài liệu cũ không thuộc API hiện tại.
+Chưa có API duyệt Seller, quản lý cửa hàng, cart/checkout/order/payment/shipment hoặc quản trị tài khoản và phân role. Các role `SELLER` và `SHIPPER` hiện chưa được cấp qua luồng ứng dụng.
