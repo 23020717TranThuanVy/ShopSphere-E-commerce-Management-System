@@ -1,0 +1,41 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: ${DB_SA_PASSWORD:?Set DB_SA_PASSWORD in .env.docker}
+      MSSQL_DB: ShopSphereDB
+      MSSQL_USER: shopsphere_app
+      MSSQL_PASSWORD: ${DB_APP_PASSWORD:?Set DB_APP_PASSWORD in .env.docker}
+    ports:
+      - "127.0.0.1:1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_URL: jdbc:sqlserver://db:1433;databaseName=ShopSphereDB;encrypt=true;trustServerCertificate=true
+      DB_USERNAME: shopsphere_app
+      DB_PASSWORD: ${DB_APP_PASSWORD:?Set DB_APP_PASSWORD in .env.docker}
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  sqlserver-data:
