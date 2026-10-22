@@ -35,6 +35,7 @@ build/
 .env
 .env.*
 !.env.example
+!.env.docker.example
 
 ### Local application configuration ###
 **/application-local.properties

@@ -11,6 +11,7 @@ public class ShopsphereApplication {
 
         Dotenv.configure()
                 .systemProperties()
+                .ignoreIfMissing()
                 .load();
 
         SpringApplication.run(ShopsphereApplication.class, args);
