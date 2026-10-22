@@ -41,7 +41,7 @@ Docker Compose starts the backend and its own SQL Server Express container. This
    docker compose --env-file .env.docker up --build
    ```
 
-The API is available at `http://localhost:8080`. The Compose database is available to database tools on `localhost:1433`. Its data is kept in the `sqlserver-data` Docker volume when containers stop. The example passwords are placeholders; do not use them outside local development.
+The API is available at `http://localhost:8081` when using Docker Compose. The Compose database is available to database tools on `localhost:1433`. Its data is kept in the `sqlserver-data` Docker volume when containers stop. The example passwords are placeholders; do not use them outside local development.
 
 To stop the services while preserving database data:
 
@@ -49,7 +49,7 @@ To stop the services while preserving database data:
 docker compose down
 ```
 
-The application container connects to the database by the Compose service name `db`, not by `localhost`. The existing `.env` file for running the app directly on the host is not used by this Docker Compose setup.
+The application container connects to the database by the Compose service name `db`, not by `localhost`. The existing `.env` file for running the app directly on the host is not used by this Docker Compose setup. Running the application directly with Maven still uses port `8080` by default.
 
 ## Run the application
 
