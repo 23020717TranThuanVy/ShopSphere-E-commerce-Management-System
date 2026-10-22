@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ShopsphereApplication {
 
     public static void main(String[] args) {
-
         Dotenv.configure()
                 .systemProperties()
                 .ignoreIfMissing()
