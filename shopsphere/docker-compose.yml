@@ -30,6 +30,9 @@ services:
       DB_URL: jdbc:sqlserver://db:1433;databaseName=ShopSphereDB;encrypt=true;trustServerCertificate=true
       DB_USERNAME: shopsphere_app
       DB_PASSWORD: ${DB_APP_PASSWORD:?Set DB_APP_PASSWORD in .env.docker}
+      SHOPSPHERE_ADMIN_EMAIL: ${SHOPSPHERE_ADMIN_EMAIL:-}
+      SHOPSPHERE_ADMIN_PASSWORD: ${SHOPSPHERE_ADMIN_PASSWORD:-}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
     ports:
       - "127.0.0.1:8081:8080"
     depends_on:

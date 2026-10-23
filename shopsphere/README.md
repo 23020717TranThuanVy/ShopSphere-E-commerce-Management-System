@@ -2,6 +2,8 @@
 
 ShopSphere is a Spring Boot REST API for managing product categories and products. It uses Spring Data JPA with Microsoft SQL Server.
 
+The React frontend supports account registration and sign-in using a server-side session cookie. Public registration creates a `CUSTOMER`; catalog write operations are currently restricted to `ADMIN` because seller/store ownership has not been implemented.
+
 ## Requirements
 
 - JDK 17 or newer
@@ -43,6 +45,8 @@ Docker Compose starts the backend and its own SQL Server Express container. This
 
 The API is available at `http://localhost:8081` when using Docker Compose. The Compose database is available to database tools on `localhost:1433`. Its data is kept in the `sqlserver-data` Docker volume when containers stop. The example passwords are placeholders; do not use them outside local development.
 
+Set `SHOPSPHERE_ADMIN_EMAIL` and `SHOPSPHERE_ADMIN_PASSWORD` in `.env.docker` to bootstrap the first administrator. Use a unique password of at least 12 characters. The account is created only if that email does not already exist; changing the environment value later does not reset an existing account password.
+
 To stop the services while preserving database data:
 
 ```powershell
@@ -72,6 +76,18 @@ The application-context test connects to SQL Server, so configure the database v
 ## API overview
 
 All request and response bodies use JSON. Product creation and updates require an existing category.
+
+### Authentication and access
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/api/auth/csrf` | Initialize/read the CSRF token required for state-changing requests |
+| `POST` | `/api/auth/register` | Create a Customer account and sign in |
+| `POST` | `/api/auth/login` | Sign in and create a server-side session |
+| `GET` | `/api/auth/me` | Return the current account or `401` |
+| `POST` | `/api/auth/logout` | Invalidate the session |
+
+Passwords are stored with BCrypt. The browser keeps only the HttpOnly session cookie; it must send the CSRF token in the response-provided header for `POST`, `PUT`, and `DELETE` requests. Product/category GET endpoints are public; writes require `ADMIN`. Local Compose uses HTTP and sets `SESSION_COOKIE_SECURE=false`; production must use HTTPS and set it to `true`.
 
 | Method | Endpoint | Description | Success status |
 | --- | --- | --- | --- |

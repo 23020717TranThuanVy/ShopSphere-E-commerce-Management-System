@@ -16,3 +16,10 @@ export type Category = {
 
 export type ProductPayload = Omit<Product, 'id' | 'categoryName'>;
 export type CategoryPayload = Omit<Category, 'id'>;
+
+export type Account = {
+  id: number;
+  displayName: string;
+  email: string;
+  role: 'CUSTOMER' | 'SELLER' | 'ADMIN' | 'SHIPPER';
+};
