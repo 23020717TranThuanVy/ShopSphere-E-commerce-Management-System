@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: CiOnly_Passw0rd!2026
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'CiOnly_Passw0rd!2026' -C -Q 'SELECT 1' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+          --health-start-period 40s
+    defaults:
+      run:
+        working-directory: shopsphere
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: shopsphere/pom.xml
+
+      - name: Create test database
+        run: >-
+          docker exec "$(docker ps -q --filter ancestor=mcr.microsoft.com/mssql/server:2022-latest | head -n 1)"
+          /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'CiOnly_Passw0rd!2026'
+          -C -Q "IF DB_ID('ShopSphereDB') IS NULL CREATE DATABASE ShopSphereDB"
+
+      - name: Run backend tests
+        run: ./mvnw -B test
+        env:
+          DB_URL: jdbc:sqlserver://localhost:1433;databaseName=ShopSphereDB;encrypt=true;trustServerCertificate=true
+          DB_USERNAME: sa
+          DB_PASSWORD: CiOnly_Passw0rd!2026
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: shopsphere/frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: shopsphere/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
