@@ -4,6 +4,7 @@ import com.shopsphere.dto.AccountResponse;
 import com.shopsphere.dto.LoginRequest;
 import com.shopsphere.dto.RegisterRequest;
 import com.shopsphere.entity.AccountRole;
+import com.shopsphere.entity.AccountStatus;
 import com.shopsphere.entity.AccountUser;
 import com.shopsphere.repository.AccountUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,11 +64,30 @@ public class AuthController {
                     .body(new MessageResponse("An account with this email already exists"));
         }
 
+        AccountRole requestedRole;
+        try {
+            requestedRole = AccountRole.valueOf(request.getAccountType().trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Choose Customer or Seller account type"));
+        }
+        if (requestedRole != AccountRole.CUSTOMER && requestedRole != AccountRole.SELLER) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Choose Customer or Seller account type"));
+        }
+        String displayName = email.substring(0, email.indexOf('@'));
+        displayName = displayName.substring(0, Math.min(displayName.length(), 120));
+
         AccountUser account = accountUserRepository.save(new AccountUser(
-                request.getDisplayName().trim(),
+                displayName,
                 email,
                 passwordEncoder.encode(request.getPassword()),
-                AccountRole.CUSTOMER));
+                requestedRole,
+                requestedRole == AccountRole.SELLER ? AccountStatus.PENDING : AccountStatus.ACTIVE,
+                request.getStoreName() == null || request.getStoreName().isBlank() ? null : request.getStoreName().trim(),
+                requestedRole == AccountRole.CUSTOMER));
+        if (requestedRole == AccountRole.SELLER) {
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
+                    .body(new MessageResponse("Seller application submitted. You can sign in after Admin approval."));
+        }
         return authenticate(email, request.getPassword(), servletRequest, servletResponse, account);
     }
 

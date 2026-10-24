@@ -37,6 +37,13 @@ public class AccountUser {
     @Column(nullable = false, length = 20)
     private AccountRole role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", length = 20)
+    private AccountStatus status = AccountStatus.ACTIVE;
+
+    @Column(length = 120)
+    private String storeName;
+
     @Column(nullable = false)
     private boolean enabled = true;
 
@@ -51,6 +58,18 @@ public class AccountUser {
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = role;
+        this.status = AccountStatus.ACTIVE;
+    }
+
+    public AccountUser(String displayName, String email, String passwordHash, AccountRole role,
+            AccountStatus status, String storeName, boolean enabled) {
+        this.displayName = displayName;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.role = role;
+        this.status = status;
+        this.storeName = storeName;
+        this.enabled = enabled;
     }
 
     public Long getId() { return id; }
@@ -58,6 +77,24 @@ public class AccountUser {
     public String getEmail() { return email; }
     public String getPasswordHash() { return passwordHash; }
     public AccountRole getRole() { return role; }
+    public AccountStatus getStatus() { return status == null ? AccountStatus.ACTIVE : status; }
+    public String getStoreName() { return storeName; }
     public boolean isEnabled() { return enabled; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public void approveSeller() {
+        if (role != AccountRole.SELLER || getStatus() != AccountStatus.PENDING) {
+            throw new IllegalStateException("Only pending Seller accounts can be approved");
+        }
+        status = AccountStatus.ACTIVE;
+        enabled = true;
+    }
+
+    public void rejectSeller() {
+        if (role != AccountRole.SELLER || getStatus() != AccountStatus.PENDING) {
+            throw new IllegalStateException("Only pending Seller accounts can be rejected");
+        }
+        status = AccountStatus.REJECTED;
+        enabled = false;
+    }
 }

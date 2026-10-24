@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
 
@@ -18,6 +20,10 @@ public class ProductRequest {
     private BigDecimal price;
 
     private String description;
+
+    @Size(max = 2048, message = "Product image URL must be at most 2048 characters")
+    @Pattern(regexp = "(?i)^https?://\\S+$", message = "Product image URL must use HTTP or HTTPS")
+    private String imageUrl;
 
     @NotNull(message = "Product stock is required")
     @PositiveOrZero(message = "Product stock must not be negative")
@@ -49,6 +55,10 @@ public class ProductRequest {
     public String getDescription() {
         return description;
     }
+
+    public String getImageUrl() { return imageUrl; }
+
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public void setDescription(String description) {
         this.description = description;

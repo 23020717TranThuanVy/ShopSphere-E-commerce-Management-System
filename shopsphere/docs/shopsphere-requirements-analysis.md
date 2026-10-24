@@ -1,6 +1,6 @@
 # ShopSphere — Phân tích phạm vi hiện tại
 
-> Mô tả phiên bản đang có trong repository, không phải đặc tả marketplace tương lai. Cập nhật: 2026-10-23.
+> Mô tả phạm vi repository hiện tại và một phần marketplace onboarding. Cập nhật: 2026-10-25.
 
 ## Mục tiêu
 
@@ -18,18 +18,19 @@ ShopSphere là ứng dụng web quản lý danh mục sản phẩm và tồn kho
 
 ### Tài khoản và phân quyền
 
-- Đăng ký công khai tạo tài khoản `CUSTOMER`; đăng nhập và đăng xuất bằng HTTP session phía server.
+- Đăng ký chung cho `CUSTOMER` và `SELLER`; cả hai chỉ nhập email/mật khẩu. Customer được kích hoạt ngay, Seller chờ Admin duyệt. Đăng nhập/đăng xuất bằng HTTP session phía server.
 - Trình duyệt giữ session cookie HttpOnly, SameSite=Lax. Password hash bằng BCrypt.
 - Request thay đổi dữ liệu cần CSRF token.
 - Admin ban đầu được bootstrap bằng `SHOPSPHERE_ADMIN_EMAIL` và `SHOPSPHERE_ADMIN_PASSWORD`.
-- GET danh mục/sản phẩm public; thao tác ghi yêu cầu role `ADMIN`.
-- Các role `SELLER` và `SHIPPER` đã có trong enum nhưng chưa có luồng tạo/cấp quyền.
+- GET danh mục public và sản phẩm ACTIVE public; Admin quản lý toàn bộ catalog, Seller đã duyệt chỉ được thao tác sản phẩm của mình.
+- Admin có API và màn hình danh sách tài khoản, duyệt/từ chối hồ sơ Seller đang chờ.
+- Role `SHIPPER` chưa có luồng cấp quyền hoặc chức năng; Seller ownership và moderation API đã có nhưng chưa có giao diện Seller/Admin tương ứng.
 
 ### Danh mục và sản phẩm
 
 - Danh mục: xem danh sách/chi tiết, tạo, cập nhật, xóa.
 - Sản phẩm: xem danh sách/chi tiết, tạo, cập nhật, xóa.
-- Sản phẩm có tên, giá, mô tả, số lượng tồn và một danh mục.
+- Sản phẩm có tên, giá, mô tả, URL ảnh tùy chọn, số lượng tồn, một danh mục, Seller sở hữu và trạng thái kiểm duyệt.
 - Tên không rỗng, giá lớn hơn 0, tồn kho không âm; danh mục phải tồn tại khi ghi sản phẩm.
 
 ### Giao diện
@@ -40,10 +41,10 @@ ShopSphere là ứng dụng web quản lý danh mục sản phẩm và tồn kho
 
 ## Chưa triển khai
 
-Chưa có store/chủ sở hữu sản phẩm, duyệt Seller, quản lý Shipper, cart, checkout, order, payment, shipping, khuyến mãi hoặc quản trị marketplace. Customer có thể đọc catalog nhưng không được thay đổi dữ liệu.
+Chưa có store profile, giao diện Seller CRUD/Admin duyệt sản phẩm, khóa/mở khóa tài khoản, quản lý Shipper, cart, checkout, order, payment, shipping hoặc khuyến mãi. Customer chỉ đọc được sản phẩm ACTIVE.
 
 ## Yêu cầu phát triển tiếp
 
 - Khi thêm role, kiểm tra quyền tại backend; không dựa riêng vào việc ẩn nút trên UI.
-- Trước khi cho Seller quản lý sản phẩm, cần bổ sung store và kiểm tra ownership ở mọi thao tác.
+- Nếu bổ sung hồ sơ cửa hàng, cần nối store profile với Seller; ownership hiện được kiểm tra trực tiếp theo account ở mọi thao tác sản phẩm.
 - Không commit `.env`, `.env.docker`, `node_modules`, `dist`, log hoặc dữ liệu cục bộ.

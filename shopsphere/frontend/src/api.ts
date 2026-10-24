@@ -1,7 +1,17 @@
-import type { Account, Category, CategoryPayload, Product, ProductPayload } from './types';
+import type { Account, Category, CategoryPayload, PendingSellerRegistration, Product, ProductPayload } from './types';
 
 let csrfToken: string | null = null;
 let csrfHeaderName = 'X-CSRF-TOKEN';
+
+export class ApiError extends Error {
+  readonly fieldErrors: Record<string, string>;
+
+  constructor(message: string, fieldErrors: Record<string, string> = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.fieldErrors = fieldErrors;
+  }
+}
 
 async function refreshCsrf(): Promise<void> {
   const response = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
@@ -26,8 +36,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    const fieldErrors = body?.fieldErrors ? Object.values(body.fieldErrors).join(' · ') : '';
-    throw new Error(fieldErrors || body?.message || `Request failed (${response.status})`);
+    const fieldErrors = (body?.fieldErrors || {}) as Record<string, string>;
+    const labels: Record<string, string> = { displayName: 'Display name', email: 'Email', password: 'Password', accountType: 'Account type', storeName: 'Store name' };
+    const fieldSummary = Object.entries(fieldErrors).map(([field, message]) => `${labels[field] || field}: ${message}`).join(' · ');
+    const readableMessage = (message: string) => message
+      .replace(/^must not be blank$/i, 'is required')
+      .replace(/^must be a well-formed email address$/i, 'must be a valid email address');
+    const readableFieldErrors = Object.fromEntries(Object.entries(fieldErrors).map(([field, message]) => [field, readableMessage(message)]));
+    throw new ApiError(fieldSummary || body?.message || `Request failed (${response.status})`, readableFieldErrors);
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -42,7 +58,7 @@ export const api = {
     return response.json() as Promise<Account>;
   },
   login: (email: string, password: string) => request<Account>('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  register: (displayName: string, email: string, password: string) => request<Account>('/api/auth/register', { method: 'POST', body: JSON.stringify({ displayName, email, password }) }),
+  register: (email: string, password: string, accountType: 'CUSTOMER' | 'SELLER') => request<Account | PendingSellerRegistration>('/api/auth/register', { method: 'POST', body: JSON.stringify({ email, password, accountType }) }),
   logout: async () => {
     await request<void>('/api/auth/logout', { method: 'POST' });
     csrfToken = null;
@@ -51,7 +67,11 @@ export const api = {
   createProduct: (payload: ProductPayload) => request<Product>('/api/products', { method: 'POST', body: JSON.stringify(payload) }),
   updateProduct: (id: number, payload: ProductPayload) => request<Product>(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteProduct: (id: number) => request<void>(`/api/products/${id}`, { method: 'DELETE' }),
+  moderateProduct: (id: number, status: 'ACTIVE' | 'REJECTED' | 'SUSPENDED') => request<Product>(`/api/admin/products/${id}/moderation`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   categories: () => request<Category[]>('/api/categories'),
   createCategory: (payload: CategoryPayload) => request<Category>('/api/categories', { method: 'POST', body: JSON.stringify(payload) }),
   deleteCategory: (id: number) => request<void>(`/api/categories/${id}`, { method: 'DELETE' }),
+  accounts: () => request<Account[]>('/api/admin/accounts'),
+  approveSeller: (id: number) => request<Account>(`/api/admin/accounts/${id}/approve`, { method: 'POST' }),
+  rejectSeller: (id: number) => request<Account>(`/api/admin/accounts/${id}/reject`, { method: 'POST' }),
 };

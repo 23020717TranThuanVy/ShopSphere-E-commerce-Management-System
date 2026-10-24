@@ -12,6 +12,9 @@ import java.math.BigDecimal;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Column;
 
 @Entity
 public class Product {
@@ -28,6 +31,9 @@ public class Product {
 
     private String description;
 
+    @Column(length = 2048)
+    private String imageUrl;
+
     @NotNull(message = "Product stock is required")
     @PositiveOrZero(message = "Product stock must not be negative")
     private Integer stock;
@@ -35,6 +41,14 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id")
+    private AccountUser seller;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_status", length = 24)
+    private ProductStatus moderationStatus = ProductStatus.ACTIVE;
 
     protected Product() {
         
@@ -74,6 +88,21 @@ public class Product {
     public String getDescription() {
         return description;
     }
+
+    public String getImageUrl() { return imageUrl; }
+
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public AccountUser getSeller() { return seller; }
+
+    public void setSeller(AccountUser seller) { this.seller = seller; }
+
+    public ProductStatus getModerationStatus() {
+        // Existing catalog rows predate moderation and remain visible after schema update.
+        return moderationStatus == null ? ProductStatus.ACTIVE : moderationStatus;
+    }
+
+    public void setModerationStatus(ProductStatus moderationStatus) { this.moderationStatus = moderationStatus; }
 
     public void setDescription(String description) {
         this.description = description;

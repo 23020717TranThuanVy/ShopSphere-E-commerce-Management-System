@@ -23,7 +23,7 @@ Frontend chạy riêng bằng Vite; Compose chỉ chạy API và SQL Server. Pro
 - Browser giữ session cookie `HttpOnly`, `SameSite=Lax`; `Secure` cấu hình bằng `SESSION_COOKIE_SECURE` (false local HTTP, true khi dùng HTTPS).
 - CSRF token lưu trong session. Frontend lấy token từ `/api/auth/csrf` và gửi header tương ứng với POST/PUT/DELETE.
 - Password hash bằng BCrypt.
-- Catalog GET public; catalog POST/PUT/DELETE chỉ role `ADMIN`.
+- Public chỉ đọc sản phẩm `ACTIVE`; Admin quản lý toàn bộ catalog, Seller đã duyệt chỉ quản lý sản phẩm thuộc mình và sản phẩm mới/chỉnh sửa phải qua kiểm duyệt.
 - Tài khoản Admin tùy chọn được bootstrap qua `SHOPSPHERE_ADMIN_EMAIL` và `SHOPSPHERE_ADMIN_PASSWORD`.
 - Role `CUSTOMER`, `SELLER`, `ADMIN`, `SHIPPER` được lưu trên account; chỉ Customer registration và Admin bootstrap có luồng cấp role hiện tại.
 
@@ -47,7 +47,7 @@ Luồng catalog: HTTP → controller → service → repository → SQL Server. 
 
 - `AccountUser`: tên, email duy nhất, BCrypt hash, role, enabled, createdAt.
 - `Category`: tên, mô tả.
-- `Product`: tên, giá, mô tả, stock, tham chiếu ManyToOne tới Category.
+- `Product`: tên, giá, mô tả, URL ảnh, stock, Category, Seller sở hữu và moderation status.
 - Hibernate `ddl-auto=update`; chưa dùng migration versioned.
 
 ## Lỗi và quyền
@@ -61,4 +61,4 @@ Luồng catalog: HTTP → controller → service → repository → SQL Server. 
 
 Docker Compose chạy SQL Server 2022 Express và backend; frontend chạy `npm run dev`. `.env.docker` cung cấp secrets. Cấu hình này dành cho local development, chưa phải production deployment.
 
-Chưa có store ownership, luồng duyệt Seller, cấp tài khoản Shipper, session store dùng chung, rate limiting, production reverse proxy, frontend production container, backup policy hoặc nghiệp vụ đặt hàng. Seller access chưa được cấp vì chưa có ownership checks.
+Đã có Seller ownership checks và API kiểm duyệt sản phẩm; giao diện quản lý catalog theo Seller và Admin chưa hoàn thiện. Chưa có cấp tài khoản Shipper, session store dùng chung, rate limiting, production reverse proxy, frontend production container, backup policy hoặc nghiệp vụ đặt hàng.

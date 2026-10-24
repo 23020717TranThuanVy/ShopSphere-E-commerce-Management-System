@@ -30,12 +30,15 @@
 
 ## Frontend smoke test thủ công
 
-1. Khởi động API/SQL Server và Vite; trang đăng nhập hiển thị.
-2. Đăng ký Customer, tải dashboard và kiểm tra chế độ chỉ đọc.
-3. Đăng xuất/đăng nhập lại; kiểm tra session còn hiệu lực khi refresh trang.
-4. Đăng nhập bằng Admin bootstrap; tạo danh mục/sản phẩm, sửa sản phẩm, tìm/lọc, xóa sản phẩm.
-5. Kiểm tra CSRF header được gửi cho thao tác ghi, lỗi API hiển thị rõ và dashboard cập nhật summary.
-6. Chạy `npm run build` trong `shopsphere/frontend/`.
+1. Khởi động API/SQL Server và Vite; trang đăng nhập/đăng ký hiển thị.
+2. Đăng ký Customer và kiểm tra tài khoản được đăng nhập ngay.
+3. Đăng ký Seller bằng email/mật khẩu; kiểm tra trạng thái chờ duyệt và không thể đăng nhập.
+4. Đăng nhập Admin bootstrap; vào Accounts, duyệt một Seller và từ chối một Seller khác.
+5. Kiểm tra Seller được duyệt đăng nhập được; Seller bị từ chối/chưa duyệt không đăng nhập được.
+6. Đăng xuất/đăng nhập lại; kiểm tra session còn hiệu lực khi refresh trang.
+7. Đăng nhập Admin; tạo danh mục/sản phẩm, sửa sản phẩm, tìm/lọc, xóa sản phẩm.
+8. Kiểm tra CSRF header được gửi cho thao tác ghi, lỗi API hiển thị rõ và dashboard cập nhật summary.
+9. Chạy `npm run build` trong `shopsphere/frontend/`.
 
 ## Automated tests hiện có
 

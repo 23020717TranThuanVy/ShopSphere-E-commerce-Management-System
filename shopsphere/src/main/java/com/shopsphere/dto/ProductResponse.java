@@ -1,6 +1,7 @@
 package com.shopsphere.dto;
 
 import java.math.BigDecimal;
+import com.shopsphere.entity.ProductStatus;
 
 public class ProductResponse {
 
@@ -11,6 +12,10 @@ public class ProductResponse {
     private Integer stock;
     private Long categoryId;
     private String categoryName;
+    private String imageUrl;
+    private Long sellerId;
+    private String sellerName;
+    private ProductStatus moderationStatus;
 
     public ProductResponse() {
     }
@@ -31,6 +36,16 @@ public class ProductResponse {
         this.stock = stock;
         this.categoryId = categoryId;
         this.categoryName = categoryName;
+    }
+
+    public ProductResponse(Long id, String name, BigDecimal price, String description, Integer stock,
+            Long categoryId, String categoryName, String imageUrl, Long sellerId, String sellerName,
+            ProductStatus moderationStatus) {
+        this(id, name, price, description, stock, categoryId, categoryName);
+        this.imageUrl = imageUrl;
+        this.sellerId = sellerId;
+        this.sellerName = sellerName;
+        this.moderationStatus = moderationStatus;
     }
 
     public Long getId() {
@@ -60,4 +75,9 @@ public class ProductResponse {
     public String getCategoryName() {
         return categoryName;
     }
+
+    public String getImageUrl() { return imageUrl; }
+    public Long getSellerId() { return sellerId; }
+    public String getSellerName() { return sellerName; }
+    public ProductStatus getModerationStatus() { return moderationStatus; }
 }
